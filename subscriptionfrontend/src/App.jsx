@@ -1,5 +1,5 @@
 import React from 'react'
-import Signup from './components/auth/sign-up'
+
 import LoginPage from './components/auth/sign-in'
 import Dashboard from './components/Dashboard'
 import { Routes,Route } from 'react-router-dom'
