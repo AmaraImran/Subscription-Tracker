@@ -1,6 +1,6 @@
 import React from 'react'
 
-import LoginPage from './components/auth/sign-in'
+import LoginPage from './components/auth/Sign-in'
 import Dashboard from './components/Dashboard'
 import { Routes,Route } from 'react-router-dom'
 import AddSubscription from './components/subscription/Add-subscription'
