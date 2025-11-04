@@ -15,11 +15,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app=express()
 app.use(
-      cors({
-    origin: "https://subscription-tracker-28oq.vercel.app/", // or your frontend domain
-    credentials: true, // allows cookies
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://subscription-tracker-28oq.vercel.app"
+    ],
+    credentials: true,
   })
-)
+);
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.json())
