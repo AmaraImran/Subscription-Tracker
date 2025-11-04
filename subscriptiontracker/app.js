@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 const app=express()
 app.use(
       cors({
-    origin: "http://localhost:5173", // or your frontend domain
+    origin: "https://subscription-tracker-28oq.vercel.app/", // or your frontend domain
     credentials: true, // allows cookies
   })
 )
