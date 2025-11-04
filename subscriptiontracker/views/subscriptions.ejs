@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscription Dashboard</title>
+  <style>
+    body { font-family: Arial; margin: 30px; background: #f6f7fb; }
+    h1 { color: #333; }
+    form { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    label { display: block; margin-top: 10px; }
+    input, select { width: 100%; padding: 8px; margin-top: 4px; }
+    button { margin-top: 10px; padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 5px; }
+    button:hover { background: #0056b3; }
+    .result { background: #fff; padding: 15px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>📦 Subscription Dashboard</h1>
+
+  <!-- CREATE SUBSCRIPTION -->
+  <form id="createForm">
+    <h3>Create Subscription</h3>
+    <label>Name:</label>
+    <input name="name" required />
+    <label>Price:</label>
+    <input type="number" name="price" required />
+    <label>Currency:</label>
+    <select name="currency">
+      <option>USD</option>
+      <option>PKR</option>
+    </select>
+    <label>Frequency:</label>
+    <select name="frequency">
+      <option>monthly</option>
+      <option>yearly</option>
+    </select>
+    <label>Category:</label>
+    <input name="category" required />
+    <label>Payment Method:</label>
+    <input name="paymentmethod" required />
+    <label>Start Date:</label>
+    <input type="date" name="startdate" required />
+    <button type="submit">Create</button>
+  </form>
+
+  <!-- UPDATE SUBSCRIPTION -->
+  <form id="updateForm">
+    <h3>Update Subscription</h3>
+    <label>Subscription ID:</label>
+    <input name="id" required />
+    <label>New Price:</label>
+    <input type="number" name="price" />
+    <label>Renewal Date:</label>
+    <input type="date" name="renewaldate" />
+    <button type="submit">Update</button>
+  </form>
+
+  <!-- CANCEL SUBSCRIPTION -->
+  <form id="cancelForm">
+    <h3>Cancel Subscription</h3>
+    <label>Subscription ID:</label>
+    <input name="id" required />
+    <button type="submit">Cancel</button>
+  </form>
+
+  <!-- VIEW ALL -->
+  <button id="viewBtn">View All Subscriptions</button>
+
+  <div class="result" id="result"></div>
+
+  <script>
+    const baseUrl = "/api/v1/subscription";
+    const resultDiv = document.getElementById("result");
+
+    const showResult = (data) => {
+      resultDiv.innerHTML = "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+    };
+
+    // CREATE
+    document.getElementById("createForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = Object.fromEntries(new FormData(e.target).entries());
+      const res = await fetch(baseUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      showResult(await res.json());
+    });
+
+    // UPDATE
+    document.getElementById("updateForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const { id, ...data } = Object.fromEntries(new FormData(e.target).entries());
+      const res = await fetch(`${baseUrl}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      showResult(await res.json());
+    });
+
+    // CANCEL
+    document.getElementById("cancelForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = new FormData(e.target).get("id");
+      const res = await fetch(`${baseUrl}/${id}/cancel`, { method: "PUT" });
+      showResult(await res.json());
+    });
+
+    // VIEW ALL
+    document.getElementById("viewBtn").addEventListener("click", async () => {
+      const res = await fetch(baseUrl);
+      showResult(await res.json());
+    });
+  </script>
+</body>
+</html>

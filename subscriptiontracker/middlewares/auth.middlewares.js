@@ -1,0 +1,35 @@
+import jwt from "jsonwebtoken";
+import { JWT_SECRET } from "../config/env.js";
+import User from "../models/user.models.js";
+ export const AuthorizationMiddleware = async(req, res, next) => {
+
+try {
+    let token;
+    if(req.headers.authorization&& req.headers.authorization.startsWith("Bearer")){
+token=req.headers.authorization.split(" ")[1];
+console.log(token)
+}
+if(!token){
+    const error=new Error("No token provided, authorization denied");
+    error.statusCode=401;
+    throw error;
+}
+const decoded=jwt.verify(token,JWT_SECRET);
+const user=await User.findById(decoded.userId).select("-password");
+if(!user){
+    const error=new Error("User not found, authorization denied");
+    error.statusCode=401;
+    throw error;
+}
+req.user=user;
+next()
+}
+catch (error) {
+    res.status(401).json({
+        success:false,
+        message:"Unauthorized access",
+        error: error.message
+    })
+}
+
+}

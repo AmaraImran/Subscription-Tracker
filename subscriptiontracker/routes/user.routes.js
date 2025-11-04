@@ -1,0 +1,10 @@
+import { Router } from "express";
+import { AuthorizationMiddleware } from "../middlewares/auth.middlewares.js";
+import { getAllusers, getUserById } from "../controllers/user.controller.js";
+const userrouter=Router();
+userrouter.get("/",AuthorizationMiddleware,getAllusers);
+userrouter.get("/:id",getUserById);
+userrouter.post("/",(req,res)=>res.send("Create new user route"));
+userrouter.put("/:id",(req,res)=>res.send(`Update user with id ${req.params.id} route`));
+userrouter.delete("/:id",(req,res)=>res.send(`Delete user with id ${req.params.id} route`));
+export default userrouter;
