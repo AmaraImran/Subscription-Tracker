@@ -1,38 +1,37 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import BASE_URL from "../config/Apiconfig";
-import { PlusCircle, Edit, Trash2, RefreshCcw } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
     expired: 0,
     canceled: 0,
   });
- 
-  const token = localStorage.getItem("token");
-//   JSON.parse(token)
 
-  // 🧠 Fetch user subscriptions
+  const token = localStorage.getItem("token");
+  const user = localStorage.getItem("user");
+  const decodeuser = JSON.parse(user);
+  const userId = decodeuser._id;
+
   const fetchSubscriptions = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/subscriptions/`, {
+      const res = await axios.get(`${BASE_URL}/subscriptions/user/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = res.data.data || [];
-
       setSubscriptions(data);
-// console.log(data)
-      // Calculate stats
+
       const total = data.length;
       const active = data.filter((s) => s.status === "active").length;
       const expired = data.filter((s) => s.status === "expired").length;
       const canceled = data.filter((s) => s.status === "canceled").length;
-
       setStats({ total, active, expired, canceled });
     } catch (err) {
       console.error("Error fetching subscriptions:", err);
@@ -44,7 +43,6 @@ export default function Dashboard() {
   useEffect(() => {
     fetchSubscriptions();
   }, []);
-
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this subscription?")) return;
@@ -71,63 +69,82 @@ export default function Dashboard() {
     );
 
   return (
-    <div className="min-h-screen flex bg-gray-900 text-white">
+    <div className="min-h-screen flex flex-col md:flex-row bg-gray-900 text-white">
+      {/* Mobile Navbar */}
+      <div className="md:hidden flex justify-between items-center bg-gray-800 p-4 border-b border-gray-700">
+        <h2 className="text-xl font-bold text-purple-400">SubHub</h2>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="text-gray-300 hover:text-white"
+        >
+          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-800 p-6 space-y-6 hidden md:block">
-        <h2 className="text-2xl font-bold text-purple-400 mb-8">SubHub</h2>
+      <aside
+        className={`fixed md:static top-0 left-0 h-full w-64 bg-gray-800 p-6 space-y-6 z-50 transform ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 transition-transform duration-300`}
+      >
+        <h2 className="text-2xl font-bold text-purple-400 mb-8 hidden md:block">
+          SubHub
+        </h2>
         <nav className="space-y-4">
-          <a href="/dashboard" className="block hover:text-purple-400">
+          <Link to="/dashboard" className="block hover:text-purple-400">
             Dashboard
-          </a>
-          <Link to="/show-all-subscriptions" className="block hover:text-purple-400">
+          </Link>
+          <Link
+            to="/show-all-subscriptions"
+            className="block hover:text-purple-400"
+          >
             Subscriptions
           </Link>
           <a href="/settings" className="block hover:text-purple-400">
             Settings
           </a>
-         <a
-  href="#"
-  onClick={(e) => {
-    e.preventDefault();
-    localStorage.removeItem("token"); // remove token
-    window.location.href = "/"; // redirect to login
-  }}
-  className="block text-red-400 hover:text-red-500"
->
-  Logout
-</a>
-
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              localStorage.removeItem("token");
+              window.location.href = "/";
+            }}
+            className="block text-red-400 hover:text-red-500"
+          >
+            Logout
+          </a>
         </nav>
       </aside>
 
       {/* Main Dashboard */}
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-6 md:p-8 mt-16 md:mt-0">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-semibold">Dashboard</h1>
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
+          <h1 className="text-2xl sm:text-3xl font-semibold">Dashboard</h1>
           <button
             onClick={() => (window.location.href = "/add-subscription")}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium"
+            className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium"
           >
             <PlusCircle size={20} /> Add Subscription
           </button>
         </div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gray-800 p-5 rounded-lg shadow-md text-center">
-            <h3 className="text-gray-400 text-sm">Total Subscriptions</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 mb-6">
+          <div className="bg-gray-800 p-4 rounded-lg shadow-md text-center">
+            <h3 className="text-gray-400 text-sm">Total</h3>
             <p className="text-2xl font-bold text-purple-400">{stats.total}</p>
           </div>
-          <div className="bg-gray-800 p-5 rounded-lg shadow-md text-center">
+          <div className="bg-gray-800 p-4 rounded-lg shadow-md text-center">
             <h3 className="text-gray-400 text-sm">Active</h3>
             <p className="text-2xl font-bold text-green-400">{stats.active}</p>
           </div>
-          <div className="bg-gray-800 p-5 rounded-lg shadow-md text-center">
+          <div className="bg-gray-800 p-4 rounded-lg shadow-md text-center">
             <h3 className="text-gray-400 text-sm">Expired</h3>
             <p className="text-2xl font-bold text-yellow-400">{stats.expired}</p>
           </div>
-          <div className="bg-gray-800 p-5 rounded-lg shadow-md text-center">
+          <div className="bg-gray-800 p-4 rounded-lg shadow-md text-center">
             <h3 className="text-gray-400 text-sm">Canceled</h3>
             <p className="text-2xl font-bold text-red-400">{stats.canceled}</p>
           </div>
@@ -135,7 +152,7 @@ export default function Dashboard() {
 
         {/* Subscription Table */}
         <div className="bg-gray-800 rounded-xl shadow-lg overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm min-w-[600px]">
             <thead className="text-gray-400 border-b border-gray-700">
               <tr>
                 <th className="py-3 px-4">Name</th>

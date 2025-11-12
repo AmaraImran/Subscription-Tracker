@@ -146,3 +146,19 @@ export const updateSubscription = async (req, res, next) => {
   }
 };
 
+// ✅ Get all subscriptions of the logged-in user
+export const getSubscriptionsByUser = async (req, res, next) => {
+  try {
+    const userId = req.params.userId; // from URL param
+
+    // Find subscriptions that belong to this user
+    const subscriptions = await Subscription.find({ user: userId });
+
+    res.status(200).json({
+      success: true,
+      data: subscriptions,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
