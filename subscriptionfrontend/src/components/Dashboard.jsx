@@ -63,7 +63,7 @@ export default function Dashboard() {
 
   if (loading)
     return (
-      <div className="flex justify-center items-center h-screen text-white">
+      <div className="flex justify-center items-center h-screen text-white bg-gray-900">
         Loading Dashboard...
       </div>
     );

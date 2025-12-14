@@ -1,6 +1,6 @@
-import axios from "axios";
+
 import React, { useState } from "react";
-import BASE_URL from "../../config/Apiconfig";
+import api from "../../config/AxiosInstance";
 import { Link, useNavigate } from "react-router-dom";
 export default function SignupPage() {
     const navigate=useNavigate()
@@ -16,7 +16,7 @@ const handleChange=(e)=>{
 const handleSubmit=async(e)=>{
     e.preventDefault()
     try {
-     const res =await axios.post(`${BASE_URL}/auth/sign-up`,
+     const res =await api.post(`/auth/sign-up`,
         formdata,
      { withCredentials: true } )
 console.log(res.data);

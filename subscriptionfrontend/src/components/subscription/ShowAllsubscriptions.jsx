@@ -3,46 +3,91 @@ import axios from "axios";
 import { PlusCircle, Trash2, XCircle } from "lucide-react";
 import BASE_URL from "../../config/Apiconfig";
 
+/* 🔹 Skeleton Loader */
+const TableSkeleton = ({ rows = 5 }) => {
+  return Array.from({ length: rows }).map((_, i) => (
+    <tr key={i} className="border-b border-gray-700 animate-pulse">
+      {Array.from({ length: 9 }).map((__, j) => (
+        <td key={j} className="py-3 px-4">
+          <div className="h-4 bg-gray-700 rounded w-full"></div>
+        </td>
+      ))}
+    </tr>
+  ));
+};
+
 export default function UserSubscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🧠 Get token from localStorage
-  const token = localStorage.getItem("token");
+  const [userId, setUserId] = useState(null);
+  const [token, setToken] = useState(null);
 
+  /* 🔹 Read localStorage safely */
   useEffect(() => {
+    try {
+      const user = localStorage.getItem("user");
+      const storedToken = localStorage.getItem("token");
+
+      if (user) {
+        const parsedUser = JSON.parse(user);
+        setUserId(parsedUser?._id || null);
+      }
+
+      if (storedToken) setToken(storedToken);
+    } catch (err) {
+      console.error("Invalid auth data in localStorage",err);
+    }
+  }, []);
+
+  /* 🔹 Fetch subscriptions only when ready */
+  useEffect(() => {
+    if (!userId || !token) return;
+
     const fetchSubscriptions = async () => {
+      setLoading(true);
       try {
-        const res = await axios.get(`${BASE_URL}/subscriptions/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setSubscriptions(res.data.data || []);
+        const res = await axios.get(
+          `${BASE_URL}/subscriptions/user/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setSubscriptions(res.data?.data || []);
       } catch (err) {
         console.error("Error fetching subscriptions:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchSubscriptions();
-  }, []);
 
+    fetchSubscriptions();
+  }, [userId, token]);
+
+  /* 🔹 Delete */
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this subscription?")) return;
+    if (!window.confirm("Are you sure you want to delete this subscription?"))
+      return;
+
     try {
       await axios.delete(`${BASE_URL}/subscriptions/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       setSubscriptions((prev) => prev.filter((sub) => sub._id !== id));
     } catch (err) {
       console.error("Error deleting subscription:", err);
     }
   };
 
+  /* 🔹 Cancel */
   const handleCancel = async (id) => {
     try {
-      await axios.put(`${BASE_URL}/subscriptions/${id}/cancel`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(
+        `${BASE_URL}/subscriptions/${id}/cancel`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
       setSubscriptions((prev) =>
         prev.map((sub) =>
           sub._id === id ? { ...sub, status: "canceled" } : sub
@@ -52,13 +97,6 @@ export default function UserSubscriptions() {
       console.error("Error canceling subscription:", err);
     }
   };
-
-  if (loading)
-    return (
-      <div className="flex justify-center items-center h-screen text-white">
-        Loading your subscriptions...
-      </div>
-    );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8">
@@ -91,12 +129,15 @@ export default function UserSubscriptions() {
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
+
           <tbody>
-            {subscriptions.length > 0 ? (
+            {loading ? (
+              <TableSkeleton rows={5} />
+            ) : subscriptions.length > 0 ? (
               subscriptions.map((sub) => (
                 <tr
                   key={sub._id}
-                  className="border-b border-gray-700 hover:bg-gray-750 transition"
+                  className="border-b border-gray-700 hover:bg-gray-700 transition"
                 >
                   <td className="py-3 px-4">{sub.name}</td>
                   <td className="py-3 px-4 capitalize">{sub.category}</td>
