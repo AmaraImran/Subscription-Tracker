@@ -58,6 +58,10 @@ renewaldate:{
     }
     
 },
+reminderLastSentAt:{
+    type:Date,
+    select:false
+},
 user:{
     type:mongoose.Schema.Types.ObjectId,
     ref:"User",

@@ -10,6 +10,8 @@ import path from 'path'
 import { fileURLToPath } from "url";
 import cors from 'cors'
 import arcjetmiddleware from './middlewares/arcject.middlewares.js'
+import startSubscriptionReminderCron from './services/subscription-reminder.service.js'
+import process from 'node:process'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,7 +41,15 @@ app.get("/",(req,res)=>{
     res.render("subscriptions")
 })
 
-connectTodatabase()
-app.listen(PORT,()=>{
-    console.log(`Server is running on port 3000 on http://localhost:${PORT}`)
+const startServer = async () => {
+  startSubscriptionReminderCron()
+  await connectTodatabase()
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT} on http://localhost:${PORT}`)
+  })
+}
+
+startServer().catch((error) => {
+  console.error("Failed to start server", error)
+  process.exitCode = 1
 })
