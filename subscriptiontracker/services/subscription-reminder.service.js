@@ -1,7 +1,7 @@
 
-import cron from "node-cron";
 import nodemailer from "nodemailer";
 import Subscription from "../models/subscription.models.js";
+
 import {
   SMTP_FROM,
   SMTP_HOST,
@@ -11,18 +11,35 @@ import {
   SMTP_USER,
 } from "../config/env.js";
 
-// TESTING: Runs at the start of every minute.
-// After testing, change to "0 9 * * *" for 9 AM daily.
-const reminderSchedule = "* * * * *";
 const reminderTimezone = "Asia/Karachi";
 
+// Get today's midnight in Pakistan time.
+// This also works when Vercel runs in UTC.
 const getReminderWindow = () => {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
+  const now = new Date();
+
+  const dateParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: reminderTimezone,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(now);
+
+  const parts = Object.fromEntries(
+    dateParts.map(({ type, value }) => [type, value])
+  );
+
+  const pakistanMidnight = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day)
+  ) - 5 * 60 * 60 * 1000;
+
+  const start = new Date(pakistanMidnight);
 
   // Today through the next 7 days.
   const end = new Date(start);
-  end.setDate(end.getDate() + 8);
+  end.setUTCDate(end.getUTCDate() + 8);
 
   return { start, end };
 };
@@ -33,6 +50,18 @@ const formatRenewalDate = (date) =>
     timeZone: reminderTimezone,
   }).format(date);
 
+const createTransporter = () =>
+  nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: Number(SMTP_PORT),
+    secure: SMTP_SECURE === "true",
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+  });
+
+// Main reminder function
 const sendDueSubscriptionReminders = async (transporter) => {
   const { start, end } = getReminderWindow();
 
@@ -60,14 +89,14 @@ const sendDueSubscriptionReminders = async (transporter) => {
   for (const subscription of subscriptions) {
     if (!subscription.user) {
       console.warn(
-        `Skipping subscription ${subscription._id}: user not found.`,
+        `Skipping subscription ${subscription._id}: user not found.`
       );
       continue;
     }
 
     if (!subscription.user.email) {
       console.warn(
-        `Skipping subscription ${subscription._id}: user has no email.`,
+        `Skipping subscription ${subscription._id}: user has no email.`
       );
       continue;
     }
@@ -92,7 +121,7 @@ const sendDueSubscriptionReminders = async (transporter) => {
         (subscription) =>
           `- ${subscription.name}: ${subscription.price} ${
             subscription.currency
-          }, renews ${formatRenewalDate(subscription.renewaldate)}`,
+          }, renews ${formatRenewalDate(subscription.renewaldate)}`
       )
       .join("\n");
 
@@ -113,12 +142,12 @@ const sendDueSubscriptionReminders = async (transporter) => {
       });
 
       console.log(
-        `Reminder email accepted for ${user.email}: ${info.messageId}`,
+        `Reminder email accepted for ${user.email}: ${info.messageId}`
       );
     } catch (error) {
       console.error(
         `Failed to send reminder to ${user.email}:`,
-        error.message,
+        error.message
       );
       continue;
     }
@@ -134,31 +163,21 @@ const sendDueSubscriptionReminders = async (transporter) => {
           $set: {
             reminderLastSentAt: new Date(),
           },
-        },
+        }
       );
 
       console.log(`Recorded reminders for ${user.email}`);
     } catch (error) {
       console.error(
         `Email was accepted, but recording the reminder failed for ${user.email}:`,
-        error.message,
+        error.message
       );
     }
   }
 };
 
-const createTransporter = () =>
-  nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: Number(SMTP_PORT),
-    secure: SMTP_SECURE === "true",
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS,
-    },
-  });
-
-const startSubscriptionReminderCron = () => {
+// This function will be called by the Vercel API endpoint.
+export const runSubscriptionReminders = async () => {
   const smtpSettings = {
     SMTP_HOST,
     SMTP_PORT,
@@ -172,10 +191,9 @@ const startSubscriptionReminderCron = () => {
     .map(([name]) => name);
 
   if (missingSettings.length > 0) {
-    console.warn(
-      `Subscription reminders disabled. Missing settings: ${missingSettings.join(", ")}`,
+    throw new Error(
+      `Missing SMTP settings: ${missingSettings.join(", ")}`
     );
-    return;
   }
 
   if (
@@ -188,31 +206,9 @@ const startSubscriptionReminderCron = () => {
 
   const transporter = createTransporter();
 
-  // Prevent overlapping executions in the same process.
-  cron.schedule(
-    reminderSchedule,
-    async () => {
-      console.log(
-        `Reminder cron triggered at ${new Date().toLocaleString("en-US", {
-          timeZone: reminderTimezone,
-        })}`,
-      );
-
-      try {
-        await sendDueSubscriptionReminders(transporter);
-      } catch (error) {
-        console.error("Subscription reminder job failed:", error);
-      }
-    },
-    {
-      timezone: reminderTimezone,
-      noOverlap: true,
-    },
-  );
-
-  console.log(
-    `Subscription reminder cron scheduled: "${reminderSchedule}" (${reminderTimezone})`,
-  );
+  try {
+    await sendDueSubscriptionReminders(transporter);
+  } finally {
+    transporter.close();
+  }
 };
-
-export default startSubscriptionReminderCron;

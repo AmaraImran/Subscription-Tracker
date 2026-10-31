@@ -20,4 +20,5 @@ export const {
   SMTP_USER,
   SMTP_PASS,
   SMTP_FROM,
+  CRON_SECRET
 } = process.env;

@@ -10,7 +10,6 @@ import path from 'path'
 import { fileURLToPath } from "url";
 import cors from 'cors'
 import arcjetmiddleware from './middlewares/arcject.middlewares.js'
-import startSubscriptionReminderCron from './services/subscription-reminder.service.js'
 import process from 'node:process'
 
 const __filename = fileURLToPath(import.meta.url);
@@ -42,7 +41,6 @@ app.get("/",(req,res)=>{
 })
 
 const startServer = async () => {
-  startSubscriptionReminderCron()
   await connectTodatabase()
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT} on http://localhost:${PORT}`)
