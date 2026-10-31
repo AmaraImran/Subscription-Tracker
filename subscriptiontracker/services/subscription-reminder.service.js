@@ -13,7 +13,7 @@ import {
 
 // TESTING: Runs at the start of every minute.
 // After testing, change to "0 9 * * *" for 9 AM daily.
-const reminderSchedule = "0 9 * * *";
+const reminderSchedule = "* * * * *";
 const reminderTimezone = "Asia/Karachi";
 
 const getReminderWindow = () => {
